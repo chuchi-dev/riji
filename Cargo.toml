@@ -23,11 +23,11 @@ rhai = { version = "1", features = [
     "internals",
     "metadata",
 ] }
-git2 = "0.17"
+git2 = "0.19"
 regex = "1.5.4"
 uuid = { version = "1.1", features = ["v4"] }
 dunce = "1.0"
-toml = "0.7"
+toml = "0.8"
 rand = "0.8"
 
 # painting
