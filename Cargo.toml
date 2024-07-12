@@ -6,7 +6,7 @@ authors = ["Sören Meier <info@soerenmeier.ch>"]
 repository = "https://github.com/chuchi-dev/riji"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-rust-version = "1.65"
+rust-version = "1.74"
 
 [profile.release]
 lto = true
