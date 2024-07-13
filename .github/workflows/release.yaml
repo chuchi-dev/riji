@@ -7,6 +7,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions: write-all
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -51,5 +53,3 @@ jobs:
           files: |
             riji.exe
             riji
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
