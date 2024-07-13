@@ -51,3 +51,5 @@ jobs:
           files: |
             riji.exe
             riji
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
