@@ -1,6 +1,8 @@
 #![allow(unused_macros)]
 
-pub use ansi_term::Colour::{self, Red, Green, White, Blue, Purple, Cyan, Yellow};
+pub use ansi_term::Colour::{
+	self, Blue, Cyan, Green, Purple, Red, White, Yellow,
+};
 pub use ansi_term::Style;
 
 // make windows print colors
@@ -13,28 +15,43 @@ fn init() {
 #[macro_export]
 macro_rules! paint {
 	($color:expr, $fmt:literal $($args:tt)*) => (
-		print!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		if $crate::stdfiles::is_enabled() {
+			print!($fmt $($args)*)
+		} else {
+			print!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		}
 	)
 }
-
 #[macro_export]
 macro_rules! paintln {
 	($color:expr, $fmt:literal $($args:tt)*) => (
-		println!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		if $crate::stdfiles::is_enabled() {
+			println!($fmt $($args)*)
+		} else {
+			println!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		}
 	)
 }
 
 #[macro_export]
 macro_rules! epaint {
 	($color:expr, $fmt:literal $($args:tt)*) => (
-		eprint!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		if $crate::stdfiles::is_enabled() {
+			eprint!($fmt $($args)*)
+		} else {
+			eprint!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		}
 	)
 }
 
 #[macro_export]
 macro_rules! epaintln {
 	($color:expr, $fmt:literal $($args:tt)*) => (
-		eprintln!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		if $crate::stdfiles::is_enabled() {
+			eprintln!($fmt $($args)*)
+		} else {
+			eprintln!(concat!("{}", $fmt, "{}"), $color.prefix() $($args)*, $color.suffix())
+		}
 	)
 }
 
