@@ -1,7 +1,7 @@
 [package]
 name = "riji"
 description = "Scripting environment using rhai"
-version = "0.1.15"
+version = "0.1.16"
 authors = ["Sören Meier <info@soerenmeier.ch>"]
 repository = "https://github.com/chuchi-dev/riji"
 edition = "2021"

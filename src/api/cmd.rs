@@ -89,13 +89,6 @@ impl Cmd {
 		Ok(cmd)
 	}
 
-	/*
-	stdfiles::is_enabled()
-
-	stdfiles::STDOUT_FILE.lock().write_all(<bytes>)
-	stdfiles::STDERR_FILE.lock().write_all(<bytes>)
-	 */
-
 	pub fn execute(&mut self) -> RhaiResult<()> {
 		let cmd_str = self.args.join(" ");
 		if let Some(dir) = &self.dir {
@@ -112,7 +105,6 @@ impl Cmd {
 			cmd.stderr(Stdio::piped());
 			let output = cmd.output().expect("failed to execute");
 
-			// Write the captured stdout/stderr to our stdfiles
 			stdfiles::STDOUT_FILE.write(&output.stdout);
 			stdfiles::STDERR_FILE.write(&output.stderr);
 
