@@ -1,5 +1,6 @@
+use crate::stdfiles;
 
-use super::{RhaiResult, io_err};
+use super::{io_err, RhaiResult};
 
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
@@ -7,13 +8,12 @@ use std::thread;
 
 use rhai::{Array, Engine, Module};
 
-
 #[derive(Debug, Clone)]
 struct Cmd {
 	args: Vec<String>,
 	envs: Vec<(String, String)>,
 	env_clear: bool,
-	dir: Option<String>
+	dir: Option<String>,
 }
 
 impl Cmd {
@@ -22,7 +22,7 @@ impl Cmd {
 			args: vec![s.into()],
 			envs: vec![],
 			env_clear: false,
-			dir: None
+			dir: None,
 		}
 	}
 
@@ -36,7 +36,7 @@ impl Cmd {
 			args,
 			envs: vec![],
 			env_clear: false,
-			dir: None
+			dir: None,
 		})
 	}
 
@@ -69,8 +69,7 @@ impl Cmd {
 		cmd.args(self.args.iter().skip(1));
 
 		if let Some(dir) = &self.dir {
-			let abs_dir = dunce::canonicalize(dir)
-				.map_err(io_err)?;
+			let abs_dir = dunce::canonicalize(dir).map_err(io_err)?;
 			cmd.current_dir(abs_dir);
 		}
 
@@ -90,6 +89,13 @@ impl Cmd {
 		Ok(cmd)
 	}
 
+	/*
+	stdfiles::is_enabled()
+
+	stdfiles::STDOUT_FILE.lock().write_all(<bytes>)
+	stdfiles::STDERR_FILE.lock().write_all(<bytes>)
+	 */
+
 	pub fn execute(&mut self) -> RhaiResult<()> {
 		let cmd_str = self.args.join(" ");
 		if let Some(dir) = &self.dir {
@@ -100,8 +106,20 @@ impl Cmd {
 
 		let mut cmd = self.create_cmd()?;
 
-		let status = cmd.status()
-			.expect("failed to execute");
+		// If stdfiles enabled, pipe stdout and stderr so we can capture them
+		let status = if stdfiles::is_enabled() {
+			cmd.stdout(Stdio::piped());
+			cmd.stderr(Stdio::piped());
+			let output = cmd.output().expect("failed to execute");
+
+			// Write the captured stdout/stderr to our stdfiles
+			stdfiles::STDOUT_FILE.write(&output.stdout);
+			stdfiles::STDERR_FILE.write(&output.stderr);
+
+			output.status
+		} else {
+			cmd.status().expect("failed to execute")
+		};
 
 		if status.success() {
 			paint_ok!("execution {:?} successful", cmd_str);
@@ -118,13 +136,18 @@ impl Cmd {
 
 		let mut cmd = self.create_cmd()?;
 		cmd.stdin(Stdio::inherit());
-		cmd.stderr(Stdio::inherit());
+		if !stdfiles::is_enabled() {
+			cmd.stderr(Stdio::inherit());
+		}
 
-		let output = cmd.output()
-			.expect("failed to execute");
+		let output = cmd.output().expect("failed to execute");
 
-		let out_str = String::from_utf8(output.stdout)
-			.expect("output is not valid utf8");
+		if stdfiles::is_enabled() {
+			stdfiles::STDERR_FILE.write(&output.stderr);
+		}
+
+		let out_str =
+			String::from_utf8(output.stdout).expect("output is not valid utf8");
 
 		if output.status.success() {
 			paint_ok!("execution {:?} successful", cmd_str);
@@ -139,8 +162,8 @@ impl Cmd {
 		let mut cmds = Vec::with_capacity(cmds_input.len());
 
 		for cmd in cmds_input {
-			let cmd: Self = cmd.try_cast()
-				.ok_or(err!("only command struct allowed"))?;
+			let cmd: Self =
+				cmd.try_cast().ok_or(err!("only command struct allowed"))?;
 			cmds.push(cmd);
 		}
 
@@ -153,17 +176,17 @@ impl Cmd {
 			thread::spawn(move || {
 				// spawn command
 				let handle = thread::spawn(move || {
-					cmd.execute()
-						.expect("cmd failed");
+					cmd.execute().expect("cmd failed");
 				});
 				sender.send(handle.join()).expect("sending failed");
 			});
 		}
 
 		for _ in 0..cmds_count {
-			let r = recv.recv().expect("failed to receive message from threads");
+			let r =
+				recv.recv().expect("failed to receive message from threads");
 			if let Err(e) = r {
-				return Err(err!("Some command failed {:?}", e))
+				return Err(err!("Some command failed {:?}", e));
 			}
 		}
 

@@ -1,5 +1,5 @@
 use std::{
-	io::Cursor,
+	io::{Cursor, Write},
 	sync::{
 		atomic::{AtomicBool, Ordering},
 		Mutex, MutexGuard,
@@ -47,6 +47,11 @@ impl StdFile {
 		let mut buf = Vec::new();
 		std::mem::swap(&mut buf, &mut file.get_mut());
 		buf
+	}
+
+	pub fn write(&self, buf: &[u8]) {
+		let mut file = self.file.lock().unwrap();
+		file.write_all(buf).unwrap();
 	}
 }
 
