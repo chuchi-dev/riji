@@ -81,8 +81,10 @@ impl Script {
 
 		Output {
 			error: r.err(),
-			stdout: String::from_utf8_lossy(&STDOUT_FILE.take()).into_owned(),
-			stderr: String::from_utf8_lossy(&STDERR_FILE.take()).into_owned(),
+			stdout: String::from_utf8_lossy(&STDOUT_FILE.with(|f| f.take()))
+				.into_owned(),
+			stderr: String::from_utf8_lossy(&STDERR_FILE.with(|f| f.take()))
+				.into_owned(),
 		}
 	}
 }

@@ -105,8 +105,8 @@ impl Cmd {
 			cmd.stderr(Stdio::piped());
 			let output = cmd.output().expect("failed to execute");
 
-			stdfiles::STDOUT_FILE.write(&output.stdout);
-			stdfiles::STDERR_FILE.write(&output.stderr);
+			stdfiles::STDOUT_FILE.with(|f| f.write(&output.stdout));
+			stdfiles::STDERR_FILE.with(|f| f.write(&output.stderr));
 
 			output.status
 		} else {
@@ -135,7 +135,7 @@ impl Cmd {
 		let output = cmd.output().expect("failed to execute");
 
 		if stdfiles::is_enabled() {
-			stdfiles::STDERR_FILE.write(&output.stderr);
+			stdfiles::STDERR_FILE.with(|f| f.write(&output.stderr));
 		}
 
 		let out_str =
@@ -151,6 +151,12 @@ impl Cmd {
 	}
 
 	pub fn execute_parallel(cmds_input: Array) -> RhaiResult<()> {
+		if stdfiles::is_enabled() {
+			return Err(err!(
+				"you cannot have virtual stdio capture over multiple threads"
+			));
+		}
+
 		let mut cmds = Vec::with_capacity(cmds_input.len());
 
 		for cmd in cmds_input {
